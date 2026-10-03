@@ -5,7 +5,7 @@ const frame=document.getElementById('gift-frame'),lockButton=document.getElement
 let urls=[], busy=false, unlocked=false;
 const linkKey=new URLSearchParams(location.hash.slice(1)).get('k');
 const encoder=new TextEncoder(),decoder=new TextDecoder();
-async function fetchBytes(path){const response=await fetch(path.replace(/^locked\//,''));if(!response.ok)throw new Error('network');return new Uint8Array(await response.arrayBuffer());}
+async function fetchBytes(path){const response=await fetch(path.replace(/^locked\//,''),{cache:'no-store'});if(!response.ok)throw new Error('network');return new Uint8Array(await response.arrayBuffer());}
 async function decrypt(key,path){const bytes=await fetchBytes(path);return crypto.subtle.decrypt({name:'AES-GCM',iv:bytes.slice(0,12),additionalData:encoder.encode('birthday-v1')},key,bytes.slice(12));}
 function blobURL(data,type){const url=URL.createObjectURL(new Blob([data],{type}));urls.push(url);return url;}
 function lock(){
@@ -20,7 +20,7 @@ form.addEventListener('submit',async event=>{
   busy=true;button.disabled=true;status.textContent='Открываем сюрприз…';
   let verifiedPassword=false;
   try{
-    const response=await fetch('config.json');if(!response.ok)throw new Error('network');const config=await response.json();
+    const response=await fetch('config.json',{cache:'no-store'});if(!response.ok)throw new Error('network');const config=await response.json();
     const material=await crypto.subtle.importKey('raw',encoder.encode(linkKey+':'+input.value.trim()),'PBKDF2',false,['deriveKey']);
     input.value='';
     const key=await crypto.subtle.deriveKey({name:'PBKDF2',salt:Uint8Array.from(atob(config.salt),c=>c.charCodeAt(0)),iterations:config.iterations,hash:'SHA-256'},material,{name:'AES-GCM',length:256},false,['decrypt']);
